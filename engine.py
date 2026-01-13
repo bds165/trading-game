@@ -1,5 +1,6 @@
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
+from idlelib.editor import darwin
+from typing import List, Dict
 import random
 
 @dataclass
@@ -37,4 +38,29 @@ def make_random_card() -> Card:
 def make_company(name: str) -> Company:
     cards = [make_random_card() for _ in range(10)]
     return Company(name=name, cards=cards)
+@dataclass
+class Portfolio:
+    cash: float = 200.0
+    positions: Dict[str, int] = field(default_factory=dict)
+
+def new_game():
+    company_names = ["Red", "Blue", "Green", "Yellow"]
+    companies = {
+        name: make_company(name)
+        for name in company_names
+    }
+    portfolio = Portfolio(
+        cash = 200.0,
+        positions = {name: 5 for name in company_names}
+    )
+    price_per_share = 40.0
+    return companies, portfolio, price_per_share
+def compute_liquidation_value(companies: Dict[str, Company], portfolio: Portfolio)->float:
+    total = portfolio.cash
+    for name, company in companies.items():
+        shares = portfolio.positions.get(name, 0)
+        lv_per_share = company.liquidation_value
+        total += shares * lv_per_share
+    return total
+
 

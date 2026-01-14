@@ -56,7 +56,11 @@ def new_game():
     price_per_share = 40.0
     return companies, portfolio, price_per_share
 def compute_liquidation_value(companies: Dict[str, Company], portfolio: Portfolio)->float:
-    total = portfolio.cash
+    effective_cash = portfolio.cash
+    if effective_cash < 0:
+        interest = 0.10 * abs(effective_cash)
+        effective_cash -= interest
+    total = effective_cash
     for name, company in companies.items():
         shares = portfolio.positions.get(name, 0)
         lv_per_share = company.liquidation_value

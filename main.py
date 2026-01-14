@@ -39,16 +39,18 @@ def main():
                 continue
             if choice == "b":
                 cost = qty * price
-                if cost > portfolio.cash:
-                    print("Not enough cash.")
+                new_cash = portfolio.cash - cost
+                if new_cash < -200:
+                    print("You cannot borrow that much")
                     continue
-                portfolio.cash -= cost
+                portfolio.cash = new_cash
                 current_shares = portfolio.positions.get(stock,0)
                 portfolio.positions[stock] = current_shares + qty
                 print(f"Bought {qty} shares of {stock} for {cost: .2f}.")
             else:
-                if qty > portfolio.positions.get(stock,0):
-                    print("Not enough shares.")
+                new_q = portfolio.positions.get(stock, 0) - qty
+                if new_q < -5:
+                    print("Cannot short more than 5 shares.")
                     continue
                 revenue = qty * price
                 portfolio.cash += revenue
@@ -63,12 +65,6 @@ def main():
         print(f"{name} : {company.liquidation_value}")
     final_value = compute_liquidation_value(companies, portfolio)
     print(f"Final value: ${final_value:.2f}")
-
-
-
-
-
-
 
 
 

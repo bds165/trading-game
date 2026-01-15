@@ -66,5 +66,10 @@ def compute_liquidation_value(companies: Dict[str, Company], portfolio: Portfoli
         lv_per_share = company.liquidation_value
         total += shares * lv_per_share
     return total
-
+def update_price(current_price: float) -> float:
+    noise = random.uniform(-1.0, 1.0)
+    new_price = current_price + noise
+    if new_price < 1.0:
+        new_price = 1.0
+    return new_price
 

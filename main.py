@@ -1,7 +1,8 @@
-from engine import make_company, new_game, compute_liquidation_value
+from engine import make_company, new_game, compute_liquidation_value,update_price
 
-def print_status(companies, portfolio, price: float) -> None:
+def print_status(companies, portfolio, price: float, time_step: int) -> None:
     print("\n=== CURRENT STATUS ===")
+    print(f"Time step: {time_step}")
     print(f"Cash: ${portfolio.cash:.2f}")
     print(f"Market price (all companies): ${price:.2f}")
     print("Positions:")
@@ -12,6 +13,7 @@ def print_status(companies, portfolio, price: float) -> None:
 
 def main():
     companies, portfolio, price = new_game()
+    time_step = 0
     print("Welcome to the Yale Trading Game prototype!")
     print("You start with $200 cash and 5 shares of each company at $40.\n")
 
@@ -20,9 +22,14 @@ def main():
         print("[e]nd game")
         print("[b]uy shares")
         print("[s]ell shares")
+        print("[n]ext step (advance time, update price")
         choice = input("> ").strip().lower()
         if choice == "e":
             break
+        elif choice == "n":
+            price = update_price(price)
+            time_step += 1
+            print(f"Time step updated to: {time_step}. New price: {price:.2f}")
         elif choice == "b" or choice == "s":
             stock = input("Which company? Red/Blue/Green/Yellow: ").strip().title()
             if stock not in companies:

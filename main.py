@@ -23,6 +23,7 @@ def main():
     time_step = 0
     index_portfolio = Portfolio(200.0,
                                 positions= dict(portfolio.positions))
+    starting_index_value = compute_liquidation_value(companies, index_portfolio)
     print("Welcome to the Yale Trading Game prototype!")
     print("You start with $200 cash and 5 shares of each company at $40.\n")
 
@@ -103,10 +104,12 @@ def main():
     for name, company in companies.items():
         print(f"{name} : {company.liquidation_value}")
     final_value = compute_liquidation_value(companies, portfolio)
-    print(f"Final value: ${final_value:.2f}")
+    print(f"Final value (you): ${final_value:.2f}")
     index_value = compute_liquidation_value(companies, index_portfolio)
-    print(f"Market index value: ${index_value:.2f}")
-    starting_value = compute_liquidation_value(companies, index_portfolio)
+    print(f"Market index value : ${index_value:.2f}")
+
+
+    starting_value = starting_index_value
     your_return = (final_value - starting_value) / starting_value * 100
     index_return = (index_value - starting_value) / starting_value * 100
     print(f"Your return is: {your_return:.2f}%")

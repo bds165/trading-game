@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Yale Trading Game (MVP)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    .row { display: flex; gap: 24px; flex-wrap: wrap; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; min-width: 320px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
+    .flash { padding: 10px 12px; border-radius: 8px; margin-bottom: 10px; }
+    .flash.ok { background: #eaf7ea; border: 1px solid #b9e3b9; }
+    .flash.error { background: #ffecec; border: 1px solid #ffb3b3; }
+    form { margin: 0; }
+    input, select, button { padding: 8px; }
+    button { cursor: pointer; }
+    .muted { color: #666; font-size: 0.95em; }
+    .events { max-height: 420px; overflow: auto; }
+    code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Yale Trading Game (Flask MVP)</h1>
+  <p class="muted">Single-player, in-memory state. Last 20 events shown.</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="row">
+    <div class="card">
+      <h2>Status</h2>
+      <p><strong>Time step:</strong> {{ state.time_step }}</p>
+      <p><strong>Cash:</strong> ${{ "%.2f"|format(state.player.cash) }}</p>
+
+      <h3>Prices</h3>
+      <table>
+        <thead><tr><th>Company</th><th>Price</th></tr></thead>
+        <tbody>
+          {% for name, price in state.prices.items() %}
+            <tr><td>{{ name }}</td><td>${{ "%.2f"|format(price) }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3>Positions</h3>
+      <table>
+        <thead><tr><th>Company</th><th>Shares</th></tr></thead>
+        <tbody>
+          {% for name, shares in state.player.positions.items() %}
+            <tr><td>{{ name }}</td><td>{{ shares }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Actions</h2>
+
+      <h3>New Game</h3>
+      <form method="post" action="{{ url_for('game.new') }}">
+        <label>Seed (optional):</label><br/>
+        <input name="seed" placeholder="e.g. 123" />
+        <button type="submit">Start New Game</button>
+      </form>
+
+      <hr/>
+
+      <h3>Trade</h3>
+      <form method="post" action="{{ url_for('game.do_trade') }}">
+        <label>Company:</label><br/>
+        <select name="company">
+          {% for name in state.companies.keys() %}
+            <option value="{{ name }}">{{ name }}</option>
+          {% endfor %}
+        </select>
+        <br/><br/>
+
+        <label>Side:</label><br/>
+        <select name="side">
+          <option value="buy">Buy</option>
+          <option value="sell">Sell</option>
+        </select>
+        <br/><br/>
+
+        <label>Quantity:</label><br/>
+        <input name="qty" type="number" min="1" value="1" />
+        <button type="submit">Submit Trade</button>
+      </form>
+
+      <hr/>
+
+      <h3>Peek</h3>
+      <form method="post" action="{{ url_for('game.do_peek') }}">
+        <label>Company:</label><br/>
+        <select name="company">
+          {% for name in state.companies.keys() %}
+            <option value="{{ name }}">{{ name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">Peek (${{ state.config.peek_cost }})</button>
+      </form>
+
+      <hr/>
+
+      <h3>Next Step</h3>
+      <form method="post" action="{{ url_for('game.do_next') }}">
+        <button type="submit">Advance Time</button>
+      </form>
+
+      <p class="muted">
+        SAR every <code>{{ state.config.sar_every }}</code> steps,
+        EPS every <code>{{ state.config.eps_every }}</code> steps.
+      </p>
+    </div>
+
+    <div class="card events">
+      <h2>Event Feed (last 20)</h2>
+      <table>
+        <thead><tr><th>Step</th><th>Kind</th><th>Payload</th></tr></thead>
+        <tbody>
+          {% for ev in events %}
+            <tr>
+              <td>{{ ev.time_step }}</td>
+              <td><strong>{{ ev.kind }}</strong></td>
+              <td class="muted">{{ ev.payload }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

@@ -7,14 +7,14 @@ from .state import GameState
 
 def make_random_card(rng: random.Random) -> Card:
     ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-    rank = random.choice(ranks)
+    rank = rng.choice(ranks)
     if rank in ["J", "Q", "K"]:
         base = 10
     elif rank == "A":
         base = 20
     else:
         base = int(rank)
-    colour = random.choice(["red", "black"])
+    colour = rng.choice(["red", "black"])
     if colour == "black":
         value = base *2
     else:
@@ -69,13 +69,13 @@ def compute_liquidation_value(companies: Dict[str, Company], portfolio: Portfoli
 def update_price(current_price: float, rng: random.Random) -> float:
     noise = rng.uniform(-1.0, 1.0)
     new_price = current_price + noise
-    return max(new_price, 1)
+    return max(new_price, 1.0)
 
 def generate_sar_report(companies: Dict[str, Company], rng: random.Random) -> Dict[str, int]:
     reports: Dict[str, int] = {}
     for name, company in companies.items():
         sample_cards = rng.sample(company.cards, k=5)
-        sar_value = sum(c.value for c in sample_cards)
+        sar_value = sum(c.value for c in sample_cards) + 50
         reports[name] = sar_value
     return reports
 
@@ -114,7 +114,16 @@ def trade(state: GameState, company: str, qty: int, side: str) -> None:
             raise ValueError("Borrow limit reached")
         positions[company] = current_shares + qty
         state.player.cash = new_cash
-        state.log("TRADE", {"side": "sell", "company":company, "qty":qty, "price":price, "cash": state.player.cash, "pos": positions[company]})
+        state.log("TRADE", {"side": "buy", "company":company, "qty":qty, "price":price, "cash": state.player.cash, "pos": positions[company]})
+    else:
+        new_shares = current_shares -qty
+        if new_shares < state.config.short_limit:
+            raise ValueError("Cannot short below -5")
+        revenue = qty * price
+        positions[company] = new_shares
+        state.player.cash = revenue + cash
+        state.log("TRADE", {"side":"sell", "company": company, "qty": qty, "price": price, "cash": state.player.cash, "pos": positions[company]})
+
 
 def peek(state:GameState, company: str) -> List[int]:
     if company not in state.companies:
@@ -123,6 +132,8 @@ def peek(state:GameState, company: str) -> List[int]:
         raise ValueError("Not enough cash for peek")
     state.player.cash -= state.config.peek_cost
     values = peek_cards(state.companies[company], state.rng, k = state.config.peek_k)
+    state.log("PEEK", {"company": company, "values": values})
+    return values
 
 def next_step(state: GameState) -> Dict[str, object]:
     state.time_step += 1
@@ -130,7 +141,7 @@ def next_step(state: GameState) -> Dict[str, object]:
         state.prices[name] = update_price(state.prices[name], state.rng)
     state.log("STEP", {"prices": dict(state.prices)})
     out: Dict[str, object] = {"time_step": state.time_step, "prices": dict(state.prices), "sar": None, "eps": None}
-    if state.time_step % state.config.eps_every == 0:
+    if state.time_step % state.config.sar_every == 0:
         sar = generate_sar_report(state.companies, state.rng)
         state.log("SAR", {"sar": sar})
         out["sar"] = sar

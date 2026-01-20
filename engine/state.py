@@ -12,7 +12,7 @@ class GameConfig:
     starting_price: float = 40.0
 
     borrow_limit: float = -200.0
-    short_limit: int =5
+    short_limit: int = -5
     interest_rate: float = 0.10
 
     peek_cost: float = 1.0
